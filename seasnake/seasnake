@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
+import sys
+import argparse
+
+from api import Client
+
+def bail(parser, ret=1, msg=""):
+    if msg:
+        print(msg)
+    # parser.print_usage()
+    parser.print_help()
+    sys.exit(ret)
+#bail()
+
+def main():
+
+    parser = argparse.ArgumentParser("seasnake")
+    parser.add_argument('-c', '--client_id',
+                        default=False,
+                        help=("Required, Digital Ocean API Client ID"))
+    parser.add_argument('-k', '--client_key',
+                        default=False,
+                        help=("Required, Digital Ocean API Key"))
+    parser.add_argument('-r', '--regions',
+                        default=False,
+                        help=("List available regions."),
+                        action="store_true")
+    # parser.add_argument('-L', '--list-variations',
+    #                     default=False,
+    #                     help=("Output all available cowacters and their "
+    #                           "variations."),
+    #                     action="store_true")
+    # parser.add_argument('-t', '--thoughts',
+    #                     default=False,
+    #                     help=("Use a thought bubble "
+    #                           "instead of a dialog bubble."
+    #                           ),
+    #                     action="store_true")
+    # parser.add_argument('-u', '--tongue',
+    #                     default=False,
+    #                     help=("Add a tounge to the"
+    #                           "selected cowacter,"
+    #                           "if appropriate."),
+    #                     action="store_true")
+    # parser.add_argument('-e', '--eyes',
+    #                     default='default',
+    #                     help=("Use a specifice type "
+    #                           "of eyes on the "
+    #                           "cowacter"))
+    # parser.add_argument('-c', '--cowacter',
+    #                     default='default',
+    #                     help=("Specify which cowacter "
+    #                           "to use. (case insensitive)"))
+    # parser.add_argument('-E', '--list-eyes',
+    #                     help=("Print a listing "
+    #                           "of the available eye "
+    #                           "types."),
+    #                     action="store_true")
+    # parser.add_argument('-r', '--random',
+    #                     help=("Choose a cowacter at random."),
+    #                     action="store_true")
+    # parser.add_argument('-C', '--copy',
+    #                     help=("Create a local copy of cow.py ",
+    #                           "for you to include in your own "
+    #                           "python program."),
+    #                     action="store_true")
+
+    args = parser.parse_args()
+
+    if not args.client_id:
+        bail(parser, msg="No API client id provided.")
+    if not args.client_key:
+        bail(parser, msg="No API client key provide.")
+
+    if args.regions:
+        cl = Client(args.client_id, args.client_key)
+        regions = cl.regions()
+        print(regions)
+
+# main()
+
+if __name__ == '__main__':
+    main()

@@ -25,17 +25,16 @@ class APIClient(object):
     def __init__(self, client_id, api_key):
         """todo: to be defined
 
-        :param userid: arg description
-        :type userid: type description
-        :param api_key: arg description
-        :type api_key: type description
+        :param client_id: Your Digital Ocean API Client ID
+        :type client_id: string
+        :param api_key: Your Digital Ocean API access Key
+        :type api_key: string
         """
 
         self._client_id = client_id
         self._api_key = api_key
 
         self._cred = CREDENTIAL_TMPL.format(self._client_id, self._api_key)
-        # self._base_url = BASE_URL + '/' + self._cred
     #__init__()
 
     def _get(self, path='', params={}):
@@ -59,13 +58,14 @@ class APIClient(object):
     #_get()
 
     def _get_json(self, path='', params={}):
-        res = self._get(path, params).json
+        raw = self._get(path, params)
+        res = raw.json()
 
         if res['status'] != 'OK':
             raise Exception("Status not OK\n{}".format(res))
 
         logger.debug("json: %s", res)
-        return res
+        return res, raw
     #_get_json()
 
     def get_doc(self):
@@ -688,6 +688,6 @@ class APIClient(object):
         :rtype: dictionary
         """
 
-        pass
+        return self._get_json('/sizes')
     #all_sizes()
 #APIClient

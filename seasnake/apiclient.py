@@ -4,16 +4,8 @@ import urllib
 
 import logging
 
-# Set up the logger
-logger = logging.getLogger(__name__)
-# Use a console handler, set it to debug by default
-logger_ch = logging.StreamHandler()
-logger.setLevel(logging.DEBUG)
-log_formatter = logging.Formatter(('%(asctime)s %(levelname)s:%(process)s'
-                                   ' %(lineno)s:%(module)s:%(funcName)s()'
-                                   ' %(message)s'))
-logger_ch.setFormatter(log_formatter)
-logger.addHandler(logger_ch)
+# get the logger
+logger = logging.getLogger('seasnake')
 
 CREDENTIAL_TMPL = "?client_id={}&api_key={}"
 BASE_URL = 'https://api.digitalocean.com'
@@ -463,7 +455,7 @@ class APIClient(object):
     images to spin up new droplets.
     """
 
-    def all_images(self, filter='global'):
+    def all_images(self, filter=None):
         """All Images
         This method returns all the available images that can be accessed by
         your client ID. You will have access to all public images by default,
@@ -494,7 +486,8 @@ class APIClient(object):
         :rtype: dictionary
         """
 
-        return self._get_json('/images', {'filter': filter})
+        f = (filter and {'filter': filter}) or {}
+        return self._get_json('/images', f)
     #all_images()
 
     def show_image(self, image_id):

@@ -4,7 +4,22 @@
 import sys
 import argparse
 
+import logging
+
+# Set up the logger
+logger = logging.getLogger('seasnake')
+# Use a console handler, set it to debug by default
+logger_ch = logging.StreamHandler()
+logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.INFO)
+log_formatter = logging.Formatter(('%(asctime)s %(levelname)s:%(process)s'
+                                   ' %(lineno)s:%(module)s:%(funcName)s()'
+                                   ' %(message)s'))
+logger_ch.setFormatter(log_formatter)
+logger.addHandler(logger_ch)
+
 from api import Client
+
 
 def bail(parser, ret=1, msg=""):
     if msg:
@@ -13,6 +28,7 @@ def bail(parser, ret=1, msg=""):
     parser.print_help()
     sys.exit(ret)
 #bail()
+
 
 def main():
 
@@ -27,45 +43,23 @@ def main():
                         default=False,
                         help=("List available regions."),
                         action="store_true")
-    # parser.add_argument('-L', '--list-variations',
-    #                     default=False,
-    #                     help=("Output all available cowacters and their "
-    #                           "variations."),
-    #                     action="store_true")
-    # parser.add_argument('-t', '--thoughts',
-    #                     default=False,
-    #                     help=("Use a thought bubble "
-    #                           "instead of a dialog bubble."
-    #                           ),
-    #                     action="store_true")
-    # parser.add_argument('-u', '--tongue',
-    #                     default=False,
-    #                     help=("Add a tounge to the"
-    #                           "selected cowacter,"
-    #                           "if appropriate."),
-    #                     action="store_true")
-    # parser.add_argument('-e', '--eyes',
-    #                     default='default',
-    #                     help=("Use a specifice type "
-    #                           "of eyes on the "
-    #                           "cowacter"))
-    # parser.add_argument('-c', '--cowacter',
-    #                     default='default',
-    #                     help=("Specify which cowacter "
-    #                           "to use. (case insensitive)"))
-    # parser.add_argument('-E', '--list-eyes',
-    #                     help=("Print a listing "
-    #                           "of the available eye "
-    #                           "types."),
-    #                     action="store_true")
-    # parser.add_argument('-r', '--random',
-    #                     help=("Choose a cowacter at random."),
-    #                     action="store_true")
-    # parser.add_argument('-C', '--copy',
-    #                     help=("Create a local copy of cow.py ",
-    #                           "for you to include in your own "
-    #                           "python program."),
-    #                     action="store_true")
+    parser.add_argument('-s', '--sizes',
+                        default=False,
+                        help=("List available sizes."),
+                        action="store_true")
+    parser.add_argument('-i', '--images',
+                        default=False,
+                        help=("List available images."),
+                        action="store_true")
+    parser.add_argument('--ssh-keys',
+                        default=False,
+                        dest='ssh_keys',
+                        help=("List available ssh-keys."),
+                        action="store_true")
+    parser.add_argument('-j', '--json',
+                        default=False,
+                        help="Output results as raw JSON.",
+                        action="store_true")
 
     args = parser.parse_args()
 
@@ -74,10 +68,34 @@ def main():
     if not args.client_key:
         bail(parser, msg="No API client key provide.")
 
-    if args.regions:
+    def print_res(l, res):
+        if args.json:
+            print(res.text)
+        else:
+            print("\n".join([str(i) for i in l]))
+
+    try:
         cl = Client(args.client_id, args.client_key)
-        regions = cl.regions()
-        print(regions)
+        if args.regions:
+            regions, res = cl.regions()
+            print_res(regions, res)
+
+        if args.sizes:
+            sizes, res = cl.sizes()
+            print_res(sizes, res)
+
+        if args.images:
+            images, res = cl.images()
+            print_res(images, res)
+
+        if args.ssh_keys:
+            skeys, res = cl.ssh_keys()
+            print_res(skeys, res)
+
+    except Exception as e:
+        if logger.getEffectiveLevel() == logging.DEBUG:
+            raise
+        bail(parser, msg=e)
 
 # main()
 

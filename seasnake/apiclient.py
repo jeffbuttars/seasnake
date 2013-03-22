@@ -340,7 +340,7 @@ class APIClient(object):
     def rebuild(self, droplet_id, image_id):
         """Rebuild Droplet
         This method allows you to reinstall a droplet with a default image.
-        This is useful if you want to start again but retain the same 
+        This is useful if you want to start again but retain the same
         IP address for your droplet.
 
         Sample Response:
@@ -348,7 +348,8 @@ class APIClient(object):
 
         :param droplet_id: Required, Integer, this is the id of your droplet
         :type droplet_id: integer
-        :param image_id: image_id Required, this is the id of the image you would like to use to rebuild your droplet with
+        :param image_id: image_id Required, this is the id of the image you
+            would like to use to rebuild your droplet with
         :type image_id: integer
         :return: event_id and status
         :rtype: dictionary

@@ -50,7 +50,7 @@ def main():
                         default=False,
                         help=("List available sizes."),
                         action="store_true")
-    parser.add_argument('-i', '--images',
+    parser.add_argument('-m', '--images',
                         default=False,
                         help=("List available images."),
                         action="store_true")
@@ -74,7 +74,48 @@ def main():
                         dest='debug_level',
                         help=("Set the debug level"))
 
+    subparsers = parser.add_subparsers(help="Manage Droplets")
+    # Add a subparser for richer Droplet management.
+    #
+    # Create a new Droplet:
+    #   seasname droplet --name="New Name" --region=1 --image=3
+    #
+    # Edit an existing Droplet, specify an existing ID. Change the image size
+    #   seasname droplet -id=412343 --image=2
+    #
+    # Edit an existing Droplet, specify an existing ID. Change the image size
+    #   seasname droplet -id=412343 --rebuild
+    #
+    # Status of an existing Droplet, specify just an existing ID.
+    #   seasname droplet -id=412343
+    parser_droplet = subparsers.add_parser('droplet',
+                                           help=("Some great help "
+                                                 "on manging Droplets.")
+                                           )
+    parser_droplet.add_argument('-n', '--name',
+                                default=False,
+                                help=("Name of new Droplet"))
+    parser_droplet.add_argument('-i', '--id',
+                                default=False,
+                                help=("ID number of Droplet"))
+    parser_droplet.add_argument('-r', '--region',
+                                default=False,
+                                help=("ID number of Droplet region"))
+    parser_droplet.add_argument('-m', '--image',
+                                default=False,
+                                help=("ID number of Droplet image"))
+    parser_droplet.add_argument('--rebuild',
+                                default=False,
+                                help=("Rebuild the droplet"))
+
+    def droplet(args):
+        print("Droplet: " + str(args))
+        sys.exit(0)
+    #droplet()
+    parser_droplet.set_defaults(func=droplet)
+
     args = parser.parse_args()
+    args.func(args)
 
     if args.debug_level:
         logger.setLevel(getattr(logging, args.debug_level.upper()))
@@ -91,6 +132,7 @@ def main():
             print("\n".join([str(i) for i in l]))
 
     try:
+
         cl = Client(args.client_id, args.client_key)
         if args.droplets:
             drops, res = cl.droplets()

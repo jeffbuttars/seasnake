@@ -107,7 +107,7 @@ class Droplet(Water):
     def __init__(self, client, id, name,
                  image_id=None, size_id=None,
                  event_id=None, status=None,
-                fetch_related=False):
+                 fetch_related=False):
 
         super(Droplet, self).__init__(client, id, name)
 

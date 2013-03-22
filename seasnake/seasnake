@@ -10,8 +10,7 @@ import logging
 logger = logging.getLogger('seasnake')
 # Use a console handler, set it to debug by default
 logger_ch = logging.StreamHandler()
-logger.setLevel(logging.DEBUG)
-# logger.setLevel(logging.INFO)
+logger.setLevel(logging.INFO)
 log_formatter = logging.Formatter(('%(asctime)s %(levelname)s:%(process)s'
                                    ' %(lineno)s:%(module)s:%(funcName)s()'
                                    ' %(message)s'))
@@ -65,7 +64,20 @@ def main():
                         help="Output results as raw JSON.",
                         action="store_true")
 
+    parser.add_argument('-a', '--all',
+                        default=False,
+                        help=("Dump as much info about everything we can"),
+                        action="store_true")
+
+    parser.add_argument('--debug-level',
+                        default=False,
+                        dest='debug_level',
+                        help=("Set the debug level"))
+
     args = parser.parse_args()
+
+    if args.debug_level:
+        logger.setLevel(getattr(logging, args.debug_level.upper()))
 
     if not args.client_id:
         bail(parser, msg="No API client id provided.")
@@ -84,19 +96,19 @@ def main():
             drops, res = cl.droplets()
             print_res(drops, res)
 
-        if args.regions:
+        if args.all or args.regions:
             regions, res = cl.regions()
             print_res(regions, res)
 
-        if args.sizes:
+        if args.all or args.sizes:
             sizes, res = cl.sizes()
             print_res(sizes, res)
 
-        if args.images:
+        if args.all or args.images:
             images, res = cl.images()
             print_res(images, res)
 
-        if args.ssh_keys:
+        if args.all or args.ssh_keys:
             skeys, res = cl.ssh_keys()
             print_res(skeys, res)
 

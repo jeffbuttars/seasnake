@@ -39,6 +39,10 @@ def main():
     parser.add_argument('-k', '--client_key',
                         default=False,
                         help=("Required, Digital Ocean API Key"))
+    parser.add_argument('-d', '--droplets',
+                        default=False,
+                        help=("List Droplets."),
+                        action="store_true")
     parser.add_argument('-r', '--regions',
                         default=False,
                         help=("List available regions."),
@@ -76,6 +80,10 @@ def main():
 
     try:
         cl = Client(args.client_id, args.client_key)
+        if args.droplets:
+            drops, res = cl.droplets()
+            print_res(drops, res)
+
         if args.regions:
             regions, res = cl.regions()
             print_res(regions, res)

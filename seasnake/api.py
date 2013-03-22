@@ -3,6 +3,10 @@ from apiclient import APIClient
 
 class Client(APIClient):
 
+    def _res_to_obj(self, cls, key, json):
+        return [cls(self, **s) for s in json[key]]
+    #_res_to_obj()
+
     def regions(self):
         """Get a list of regions as Region instances.
         :return: List of Regions, Request
@@ -10,7 +14,7 @@ class Client(APIClient):
         """
 
         json, res = self.all_regions()
-        return [Region(self, **s) for s in json['regions']], res
+        return self._res_to_obj(Region, 'regions', json), res
     #regions()
 
     def sizes(self):
@@ -20,7 +24,7 @@ class Client(APIClient):
         """
 
         json, res = self.all_sizes()
-        return [Size(self, **s) for s in json['sizes']], res
+        return self._res_to_obj(Size, 'sizes', json), res
     #sizes()
 
     def images(self):
@@ -29,7 +33,7 @@ class Client(APIClient):
         :rtype: List, Request
         """
         json, res = self.all_images()
-        return [Image(self, **s) for s in json['images']], res
+        return self._res_to_obj(Image, 'images', json), res
     #images()
 
     def ssh_keys(self):
@@ -39,8 +43,23 @@ class Client(APIClient):
         """
 
         json, res = self.all_ssh_keys()
-        return [SSHKey(self, **s) for s in json['ssh_keys']], res
+        return self._res_to_obj(SSHKey, 'ssh_keys', json), res
     #ssh_keys()
+
+    def droplets(self, fetch_related=True):
+        """Get A list of Droplets for the client account
+
+        :param fetch_related: Fetch related object information, Image, Size,
+            etc.
+        :type fetch_related: boolean
+        :return: List of Droplet, Request
+        :rtype: List, Request
+        """
+
+        json, res = self.get_active_droplets()
+        return [Droplet(self, **(s.update({'fetch_related':fetch_related})))
+                for s in json['droplets']], res
+    #droplets()
 #Client
 
 
@@ -85,11 +104,22 @@ class Water(object):
 class Droplet(Water):
     """Docstring for Droplet """
 
-    def __init__(self, client=None,
-                 name=None, id=None, image_id=None,
-                 size_id=None, event_id=None):
-        """todo: to be defined """
+    def __init__(self, client, id, name,
+                 image_id=None, size_id=None,
+                 event_id=None, status=None,
+                fetch_related=False):
 
+        super(Droplet, self).__init__(client, id, name)
+
+        assert image_id, "No Image ID specified."
+        assert size_id, "No Size ID specified."
+        assert event_id, "No Event ID specified."
+        assert status, "No Status specified."
+
+        self._image_id = image_id
+        self._size_id = size_id
+        self._event_id = event_id
+        self._status = status
     #__init__()
 
 #Droplet

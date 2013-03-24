@@ -38,43 +38,20 @@ def main():
     parser.add_argument('-k', '--client_key',
                         default=False,
                         help=("Required, Digital Ocean API Key"))
-    parser.add_argument('-d', '--droplets',
-                        default=False,
-                        help=("List Droplets."),
-                        action="store_true")
-    parser.add_argument('-r', '--regions',
-                        default=False,
-                        help=("List available regions."),
-                        action="store_true")
-    parser.add_argument('-s', '--sizes',
-                        default=False,
-                        help=("List available sizes."),
-                        action="store_true")
-    parser.add_argument('-m', '--images',
-                        default=False,
-                        help=("List available images."),
-                        action="store_true")
-    parser.add_argument('--ssh-keys',
-                        default=False,
-                        dest='ssh_keys',
-                        help=("List available ssh-keys."),
-                        action="store_true")
     parser.add_argument('-j', '--json',
                         default=False,
                         help="Output results as raw JSON.",
                         action="store_true")
-
-    parser.add_argument('-a', '--all',
-                        default=False,
-                        help=("Dump as much info about everything we can"),
-                        action="store_true")
-
     parser.add_argument('--debug-level',
                         default=False,
                         dest='debug_level',
                         help=("Set the debug level"))
 
-    subparsers = parser.add_subparsers(help="Manage Droplets")
+    subparsers = parser.add_subparsers(dest='subparser_name',
+                                       title='SeaSnake Commands',
+                                       description="Description",
+                                       help="Halp")
+
     # Add a subparser for richer Droplet management.
     #
     # Create a new Droplet:
@@ -108,14 +85,90 @@ def main():
                                 default=False,
                                 help=("Rebuild the droplet"))
 
-    def droplet(args):
-        print("Droplet: " + str(args))
-        sys.exit(0)
+
+    ### Droplet ###
+    def droplet(args, cl):
+        drops, res = cl.droplets()
+        print_res(drops, res)
     #droplet()
     parser_droplet.set_defaults(func=droplet)
 
+    ### Region ###
+    parser_region = subparsers.add_parser('region',
+                                          help=("List available regions.")
+                                          )
+
+    def region(args, cl):
+        regions, res = cl.regions()
+        print_res(regions, res)
+    #region()
+    parser_region.set_defaults(func=region)
+
+    ### Size ###
+    parser_size = subparsers.add_parser('size',
+                                        help=("List available sizes."),
+                                        )
+
+    def size(args, sl):
+        sizes, res = cl.sizes()
+        print_res(sizes, res)
+    #size()
+    parser_size.set_defaults(func=size)
+
+    ### Image ###
+    parser_image = subparsers.add_parser('image',
+                                         help=("List available images.")
+                                         )
+
+    def image(args, cl):
+        images, res = cl.images()
+        print_res(images, res)
+    #image()
+    parser_image.set_defaults(func=image)
+
+    ### SSH Keys ###
+    parser_sshkey = subparsers.add_parser('sshkey',
+                                          help=("List available ssh-keys."),
+                                          )
+
+    def sshkey(args, cl):
+        skeys, res = cl.ssh_keys()
+        print_res(skeys, res)
+    #sshkey()
+    parser_sshkey.set_defaults(func=sshkey)
+
+    ### Report ###
+    parser_report = subparsers.add_parser('report')
+
+    def report(args, cl):
+        region(args, cl)
+        image(args, cl)
+        size(args, cl)
+        sshkey(args, cl)
+        droplet(args, cl)
+    #report()
+    parser_report.set_defaults(func=report)
+    parser.set_defaults(default=report, func=report)
+
+    ### Process the args ###
+    # If no subparser was selected, just run report
+
+    subc = False
+    for ch in subparsers.choices:
+        if ch in sys.argv:
+            subc = True
+            break
+    # end for ch in subparsers.choices
+
+    if not subc:
+        sys.argv.append('report')
     args = parser.parse_args()
-    args.func(args)
+
+    def print_res(l, res):
+        if args.json:
+            print(res.text)
+        else:
+            print("\n".join([str(i) for i in l]))
 
     if args.debug_level:
         logger.setLevel(getattr(logging, args.debug_level.upper()))
@@ -125,34 +178,9 @@ def main():
     if not args.client_key:
         bail(parser, msg="No API client key provide.")
 
-    def print_res(l, res):
-        if args.json:
-            print(res.text)
-        else:
-            print("\n".join([str(i) for i in l]))
-
     try:
-
         cl = Client(args.client_id, args.client_key)
-        if args.droplets:
-            drops, res = cl.droplets()
-            print_res(drops, res)
-
-        if args.all or args.regions:
-            regions, res = cl.regions()
-            print_res(regions, res)
-
-        if args.all or args.sizes:
-            sizes, res = cl.sizes()
-            print_res(sizes, res)
-
-        if args.all or args.images:
-            images, res = cl.images()
-            print_res(images, res)
-
-        if args.all or args.ssh_keys:
-            skeys, res = cl.ssh_keys()
-            print_res(skeys, res)
+        args.func(args, cl)
 
     except Exception as e:
         if logger.getEffectiveLevel() == logging.DEBUG:

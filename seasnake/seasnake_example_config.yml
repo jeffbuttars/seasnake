@@ -1,0 +1,13 @@
+# Config for seasnake
+
+# DigitalOcean client ID
+#client_id: ''
+
+# DigitalOcean client Key
+#client_key: ''
+
+# Output results as a JSON string.
+json: False
+
+# Logger Debug level:
+debug_level= 'error'

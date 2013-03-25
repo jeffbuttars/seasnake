@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+import os
 import sys
 import argparse
+
+from yaml import load
 
 import logging
 
@@ -29,6 +32,31 @@ def bail(parser, ret=1, msg=""):
 #bail()
 
 
+def get_config(args):
+
+    config = vars(args)
+    res = vars(args)
+
+    # Open the config file, if it exists
+    cpath = os.path.expanduser(args.config)
+    if os.path.exists(cpath):
+        logger.debug("Opening config: {}".format(args.config))
+        fd = open(cpath)
+        res.update(load(fd))
+        config['client_id'] = config['client_id'] or res['client_id']
+        config['client_key'] = config['client_key'] or res['client_key']
+        config['json'] = config['json'] or res['json']
+        config['debug_level'] = config['debug_level'] or res['debug_level']
+        # res.update(config)
+        # config = res
+
+    logger.debug(str(args))
+    logger.debug(str(config))
+
+    return argparse.Namespace(**config)
+#get_config()
+
+
 def main():
 
     parser = argparse.ArgumentParser("seasnake")
@@ -42,6 +70,10 @@ def main():
                         default=False,
                         help="Output results as raw JSON.",
                         action="store_true")
+    parser.add_argument('-g', '--config',
+                        default="~/.config/seasnake.yml",
+                        help="Specify a config file"
+                        )
     parser.add_argument('--debug-level',
                         default=False,
                         dest='debug_level',
@@ -85,9 +117,9 @@ def main():
                                 default=False,
                                 help=("Rebuild the droplet"))
 
-
     ### Droplet ###
     def droplet(args, cl):
+        logging.debug("droplet")
         drops, res = cl.droplets()
         print_res(drops, res)
     #droplet()
@@ -99,6 +131,7 @@ def main():
                                           )
 
     def region(args, cl):
+        logging.debug("region")
         regions, res = cl.regions()
         print_res(regions, res)
     #region()
@@ -110,6 +143,7 @@ def main():
                                         )
 
     def size(args, sl):
+        logging.debug("size")
         sizes, res = cl.sizes()
         print_res(sizes, res)
     #size()
@@ -121,6 +155,7 @@ def main():
                                          )
 
     def image(args, cl):
+        logging.debug("image")
         images, res = cl.images()
         print_res(images, res)
     #image()
@@ -132,6 +167,7 @@ def main():
                                           )
 
     def sshkey(args, cl):
+        logging.debug("sshkey")
         skeys, res = cl.ssh_keys()
         print_res(skeys, res)
     #sshkey()
@@ -141,6 +177,7 @@ def main():
     parser_report = subparsers.add_parser('report')
 
     def report(args, cl):
+        logging.debug("report")
         region(args, cl)
         image(args, cl)
         size(args, cl)
@@ -148,7 +185,6 @@ def main():
         droplet(args, cl)
     #report()
     parser_report.set_defaults(func=report)
-    parser.set_defaults(default=report, func=report)
 
     ### Process the args ###
     # If no subparser was selected, just run report
@@ -164,22 +200,27 @@ def main():
         sys.argv.append('report')
     args = parser.parse_args()
 
+    if args.debug_level:
+        logger.setLevel(getattr(logging, args.debug_level.upper()))
+
     def print_res(l, res):
         if args.json:
             print(res.text)
         else:
             print("\n".join([str(i) for i in l]))
 
-    if args.debug_level:
+    config = get_config(args)
+
+    if config.debug_level:
         logger.setLevel(getattr(logging, args.debug_level.upper()))
 
-    if not args.client_id:
+    if not config.client_id:
         bail(parser, msg="No API client id provided.")
-    if not args.client_key:
+    if not config.client_key:
         bail(parser, msg="No API client key provide.")
 
     try:
-        cl = Client(args.client_id, args.client_key)
+        cl = Client(config.client_id, config.client_key)
         args.func(args, cl)
 
     except Exception as e:

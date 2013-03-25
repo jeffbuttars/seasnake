@@ -96,7 +96,7 @@ class Water(object):
     def __repr__(self):
         """This is intended to be shell friendly
         """
-        return "{}:{}".format(self._name, self._id)
+        return "{} name:'{}', id:{}".format(self.__class__.__name__, self._name, self._id)
     #__repr__()
 #Water
 
@@ -150,7 +150,8 @@ class Image(Water):
     def __repr__(self):
         """This is intended to be shell friendly
         """
-        return "{}:{}:{}".format(self._name, self._distro, self._id)
+        return "{} name:'{}', distro:'{}', id:{}".format(
+            self.__class__.__name__, self._name, self._distro, self._id)
     #__repr__()
 #Image
 

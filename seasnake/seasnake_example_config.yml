@@ -10,4 +10,9 @@
 json: False
 
 # Logger Debug level:
-debug_level= 'error'
+debug_level: 'error'
+
+# Defaults for new Droplets
+droplet_size:
+droplet_image:
+droplet_region: 1

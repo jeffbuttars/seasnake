@@ -87,7 +87,7 @@ def main():
     # Add a subparser for richer Droplet management.
     #
     # Create a new Droplet:
-    #   seasname droplet --name="New Name" --region=1 --image=3
+    #   seasname droplet --name="New Name" --region=1 --image=3 --size=1
     #
     # Edit an existing Droplet, specify an existing ID. Change the image size
     #   seasname droplet -id=412343 --image=2
@@ -113,13 +113,25 @@ def main():
     parser_droplet.add_argument('-m', '--image',
                                 default=False,
                                 help=("ID number of Droplet image"))
+    parser_droplet.add_argument('-s', '--size',
+                                default=False,
+                                help=("ID number of Droplet size"))
     parser_droplet.add_argument('--rebuild',
                                 default=False,
                                 help=("Rebuild the droplet"))
 
     ### Droplet ###
     def droplet(args, cl):
-        logging.debug("droplet")
+        print("droplet: {}".format(args))
+
+        # Is this a new droplet?
+        if args.name and args.region and args.image:
+            drop = Droplet.new(cl,
+                               args.name,
+                               args.image,
+                               args.size,
+                               args.region)
+
         drops, res = cl.droplets()
         print_res(drops, res)
     #droplet()

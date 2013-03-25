@@ -122,6 +122,24 @@ class Droplet(Water):
         self._status = status
     #__init__()
 
+    def new(cls, client, name, image_id, size_id, region_id):
+        """todo: Docstring for new
+
+        :param client: arg description
+        :type client: type description
+        :param name: arg description
+        :type name: type description
+        :param image_id: arg description
+        :type image_id: type description
+        :param size_id: arg description
+        :type size_id: type description
+        :return:
+        :rtype:
+        """
+
+        pass
+    #new()
+
 #Droplet
 
 

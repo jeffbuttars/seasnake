@@ -1,4 +1,7 @@
+import logging
 from apiclient import APIClient
+
+logger = logging.getLogger('seasnake')
 
 
 class Client(APIClient):
@@ -57,8 +60,22 @@ class Client(APIClient):
         """
 
         json, res = self.get_active_droplets()
-        return [Droplet(self, **(s.update({'fetch_related':fetch_related})))
-                for s in json['droplets']], res
+
+        logger.debug(json)
+
+        drops = []
+
+        for d in json['droplets']:
+            d.update({'status': json['status'], 'fetch_related':fetch_related})
+            logger.debug(d)
+            drops.append(Droplet(self, **d))
+        # end for d in json['droplets']
+
+        # return [Droplet(self, **(s.update({'status': json['status'],
+        #                                    'fetch_related':fetch_related})))
+        #         for s in json['droplets']], res
+
+        return drops, res
     #droplets()
 #Client
 
@@ -104,42 +121,50 @@ class Water(object):
 class Droplet(Water):
     """Docstring for Droplet """
 
-    def __init__(self, client, id, name,
+    def __init__(self, client, id=None, name=None,
                  image_id=None, size_id=None,
-                 event_id=None, status=None,
-                 fetch_related=False):
+                 event_id=None, region_id=None,
+                 backups_active=None, ip_address=None,
+                 status=None, fetch_related=False):
 
         super(Droplet, self).__init__(client, id, name)
 
         assert image_id, "No Image ID specified."
         assert size_id, "No Size ID specified."
-        assert event_id, "No Event ID specified."
+        assert region_id, "No Region ID specified."
         assert status, "No Status specified."
 
         self._image_id = image_id
         self._size_id = size_id
         self._event_id = event_id
+        self._region_id = region_id
+        self._ip_address = ip_address or "N/A"
         self._status = status
+        self._backups_active = backups_active or "N/A"
     #__init__()
 
-    def new(cls, client, name, image_id, size_id, region_id):
-        """todo: Docstring for new
+    @classmethod
+    def new(cls, client, name, image_id,
+            size_id, region_id, ssh_key_ids=None):
 
-        :param client: arg description
-        :type client: type description
-        :param name: arg description
-        :type name: type description
-        :param image_id: arg description
-        :type image_id: type description
-        :param size_id: arg description
-        :type size_id: type description
-        :return:
-        :rtype:
-        """
+        res, raw = client.new_droplet(name, size_id, image_id,
+                                      region_id, ssh_key_ids=None)
 
-        pass
+        return Droplet(client, status=res['status'], **res['droplet'])
     #new()
 
+    @classmethod
+    def destroy(cls, client, id):
+        return client.destroy_droplet(id)
+    #destroy()
+
+    def __repr__(self):
+        """This is intended to be shell friendly
+        """
+        return "{} name:'{}', ip_address:{}, backups_active:{} id:{}".format(
+            self.__class__.__name__, self._name, self._ip_address,
+            self._backups_active, self._id)
+    #__repr__()
 #Droplet
 
 

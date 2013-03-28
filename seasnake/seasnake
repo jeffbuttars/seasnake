@@ -20,7 +20,7 @@ log_formatter = logging.Formatter(('%(asctime)s %(levelname)s:%(process)s'
 logger_ch.setFormatter(log_formatter)
 logger.addHandler(logger_ch)
 
-from api import Client
+from api import Client, Droplet
 
 
 def bail(parser, ret=1, msg=""):
@@ -46,7 +46,7 @@ def get_config(args):
         config['client_id'] = config['client_id'] or res['client_id']
         config['client_key'] = config['client_key'] or res['client_key']
         config['json'] = config['json'] or res['json']
-        config['debug_level'] = config['debug_level'] or res['debug_level']
+        config['log_level'] = config['log_level'] or res['log_level']
         # res.update(config)
         # config = res
 
@@ -74,14 +74,12 @@ def main():
                         default="~/.config/seasnake.yml",
                         help="Specify a config file"
                         )
-    parser.add_argument('--debug-level',
+    parser.add_argument('--log-level',
                         default=False,
-                        dest='debug_level',
-                        help=("Set the debug level"))
+                        dest='log_level',
+                        help=("Set the logging level"))
 
-    subparsers = parser.add_subparsers(dest='subparser_name',
-                                       title='SeaSnake Commands',
-                                       description="Description",
+    subparsers = parser.add_subparsers(dest='subparser_name', title='SeaSnake Commands', description="Description",
                                        help="Halp")
 
     # Add a subparser for richer Droplet management.
@@ -116,22 +114,66 @@ def main():
     parser_droplet.add_argument('-s', '--size',
                                 default=False,
                                 help=("ID number of Droplet size"))
+    parser_droplet.add_argument('-d', '--delete',
+                                default=False,
+                                action="store_true",
+                                help=("Delete the image specified by id"))
     parser_droplet.add_argument('--rebuild',
                                 default=False,
+                                action="store_true",
                                 help=("Rebuild the droplet"))
+    parser_droplet.add_argument('-y', '--yes',
+                                default=False,
+                                action="store_true",
+                                help=("Don't prompt for confirmations"))
 
     ### Droplet ###
-    def droplet(args, cl):
-        print("droplet: {}".format(args))
+    def droplet(args, config, cl):
+        logger.debug("droplet: {}".format(args))
+
+        # Delete it?
+        if args.delete:
+            assert args.id, "You must provide a Droplet ID to rebuild"
+
+            if args.yes:
+                json, raw = Droplet.destroy(cl, args.id)
+                print("Destroy ID {}, status:{}, event_id:{}".format(
+                    json['status'], json['event_id']))
+                sys.exit()
+
+            ri = raw_input("Type 'yes' to destroy the Droplet {}\n".format(args.id))
+            if ri == 'yes':
+                json, raw = Droplet.destroy(cl, args.id)
+                print("Destroy ID {}, status:{}, event_id:{}".format(
+                    json['status'], json['event_id']))
+            else:
+                sys.exit()
+
+        # is it a rebuild?
+        if args.rebuild:
+            assert args.id, "You must provide a Droplet ID to be deleted"
+
+            logger.debug("Rebuild image")
+            return
+
+        # is it a listing?
+        if args.id:
+            logger.debug("List droplet details")
+            return
 
         # Is this a new droplet?
-        if args.name and args.region and args.image:
+        if args.name:
+            args.image = args.image or config.droplet_image_id
+            args.size = args.size or config.droplet_size_id
+            args.region = args.region or config.droplet_region_id
             drop = Droplet.new(cl,
                                args.name,
                                args.image,
                                args.size,
                                args.region)
+            return
 
+        # get a print a droplet list.
         drops, res = cl.droplets()
         print_res(drops, res)
     #droplet()
@@ -142,7 +184,7 @@ def main():
                                           help=("List available regions.")
                                           )
 
-    def region(args, cl):
+    def region(args, config, cl):
         logging.debug("region")
         regions, res = cl.regions()
         print_res(regions, res)
@@ -154,7 +196,7 @@ def main():
                                         help=("List available sizes."),
                                         )
 
-    def size(args, sl):
+    def size(args, config, sl):
         logging.debug("size")
         sizes, res = cl.sizes()
         print_res(sizes, res)
@@ -166,7 +208,7 @@ def main():
                                          help=("List available images.")
                                          )
 
-    def image(args, cl):
+    def image(args, config, cl):
         logging.debug("image")
         images, res = cl.images()
         print_res(images, res)
@@ -178,7 +220,7 @@ def main():
                                           help=("List available ssh-keys."),
                                           )
 
-    def sshkey(args, cl):
+    def sshkey(args, config, cl):
         logging.debug("sshkey")
         skeys, res = cl.ssh_keys()
         print_res(skeys, res)
@@ -188,7 +230,7 @@ def main():
     ### Report ###
     parser_report = subparsers.add_parser('report')
 
-    def report(args, cl):
+    def report(args, config, cl):
         logging.debug("report")
         region(args, cl)
         image(args, cl)
@@ -212,8 +254,8 @@ def main():
         sys.argv.append('report')
     args = parser.parse_args()
 
-    if args.debug_level:
-        logger.setLevel(getattr(logging, args.debug_level.upper()))
+    if args.log_level:
+        logger.setLevel(getattr(logging, args.log_level.upper()))
 
     def print_res(l, res):
         if args.json:
@@ -223,8 +265,8 @@ def main():
 
     config = get_config(args)
 
-    if config.debug_level:
-        logger.setLevel(getattr(logging, args.debug_level.upper()))
+    if config.log_level:
+        logger.setLevel(getattr(logging, args.log_level.upper()))
 
     if not config.client_id:
         bail(parser, msg="No API client id provided.")
@@ -233,7 +275,7 @@ def main():
 
     try:
         cl = Client(config.client_id, config.client_key)
-        args.func(args, cl)
+        args.func(args, config, cl)
 
     except Exception as e:
         if logger.getEffectiveLevel() == logging.DEBUG:
@@ -241,6 +283,7 @@ def main():
         bail(parser, msg=e)
 
 # main()
+
 
 if __name__ == '__main__':
     main()

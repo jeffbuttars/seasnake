@@ -7,7 +7,6 @@ import logging
 # get the logger
 logger = logging.getLogger('seasnake')
 
-CREDENTIAL_TMPL = "?client_id={}&api_key={}"
 BASE_URL = 'https://api.digitalocean.com'
 
 
@@ -25,8 +24,6 @@ class APIClient(object):
 
         self._client_id = client_id
         self._api_key = api_key
-
-        self._cred = CREDENTIAL_TMPL.format(self._client_id, self._api_key)
     #__init__()
 
     def _get(self, path='', params={}):
@@ -38,7 +35,8 @@ class APIClient(object):
         :rtype:
         """
 
-        url = BASE_URL + path + '/' + urllib.urlencode(params) + self._cred
+        params.update({'client_id': self._client_id, 'api_key': self._api_key})
+        url = BASE_URL + path + '/?' + urllib.urlencode(params)
         logger.debug("Requesting: %s", url)
 
         res = requests.get(url)
@@ -95,8 +93,7 @@ class APIClient(object):
         :rtype: dictionary
         """
 
-        res = self._get_json('/droplets')
-        return res
+        return self._get_json('/droplets')
     #get_active_droplets()
 
     def get_droplet(self, drop_id):
@@ -116,8 +113,7 @@ class APIClient(object):
         :rtype: dictionary
         """
 
-        res = self._get_json('/droplets/{}'.format(drop_id))
-        return res
+        return self._get_json('/droplets/{}'.format(drop_id))
     #get_droplet()
 
     def new_droplet(self, name, size_id, image_id,
@@ -415,7 +411,7 @@ class APIClient(object):
         """
 
         return self._get_json('/droplets/{}/destroy'.format(
-            int(droplet_id)), {'image_id': image_id})
+            int(droplet_id)))
     #destroy_droplet()
 
     """Regions
